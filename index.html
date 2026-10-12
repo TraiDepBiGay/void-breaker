@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VOID//BREAK — Neon Rift</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+:root{--cyan:#56f6ff;--pink:#ff3bcb;--violet:#9b5cff;--bg:#070914}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:#eafaff;font-family:Rajdhani,system-ui,sans-serif}
+body{display:grid;place-items:center;background:radial-gradient(ellipse at 50% 20%,#17143a 0%,#090b1b 42%,#03040a 100%)}
+#shell{position:relative;width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));aspect-ratio:16/9;overflow:hidden;background:#080a18;border:1px solid #2d4a6a;box-shadow:0 0 45px #1b7da533,0 0 100px #7029c322}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+#hud{position:absolute;inset:0;pointer-events:none;text-shadow:0 2px 5px #000}
+.brand{position:absolute;left:2.3%;top:3%;font:900 clamp(12px,1.6vw,24px) Orbitron,sans-serif;letter-spacing:.08em;color:white}
+.brand span{color:var(--cyan);text-shadow:0 0 14px #56f6ff}
+.sub{font:600 clamp(8px,.7vw,11px) Rajdhani,sans-serif;color:#8da5c9;letter-spacing:.24em;margin-top:4px}
+#stageName{position:absolute;top:4%;left:50%;transform:translateX(-50%);font:700 clamp(10px,1vw,15px) Orbitron,sans-serif;letter-spacing:.15em;color:#d8eaff;text-align:center;white-space:nowrap}
+#stageName small{display:block;color:#7796b8;font:600 clamp(8px,.7vw,11px) Rajdhani,sans-serif;letter-spacing:.3em;margin-top:5px}
+#playerPanel{position:absolute;left:2.3%;bottom:4%;width:27%;max-width:290px}
+.label{font:700 clamp(8px,.7vw,11px) Orbitron,sans-serif;letter-spacing:.16em;color:#9db7d5;margin-bottom:6px}
+.bar{height:10px;background:#151b31;border:1px solid #394864;transform:skewX(-12deg);padding:1px;margin-bottom:7px}
+.fill{height:100%;width:100%;transition:width .12s linear}
+#hpFill{background:linear-gradient(90deg,#ff3a8b,#ff7aaf);box-shadow:0 0 12px #ff3a8b}
+#manaFill{background:linear-gradient(90deg,#4c8bff,#64f7ff);box-shadow:0 0 12px #56f6ff}
+#stats{font-size:clamp(10px,.9vw,13px);letter-spacing:.08em;color:#afc4df}
+#bossPanel{position:absolute;left:30%;right:30%;top:13%;text-align:center;display:none}
+#bossName{font:700 clamp(9px,.85vw,13px) Orbitron,sans-serif;letter-spacing:.16em;color:#ff8be9;margin-bottom:6px}
+#bossFill{background:linear-gradient(90deg,#a52dff,#ff3e93);box-shadow:0 0 14px #ff3e93}
+#abilities{position:absolute;right:2.3%;bottom:4%;display:flex;gap:8px;align-items:end}
+.skill{width:clamp(34px,4vw,54px);height:clamp(38px,4.5vw,60px);border:1px solid #526a92;background:linear-gradient(145deg,#171e38dd,#090d20ee);display:grid;place-items:center;position:relative;box-shadow:inset 0 0 15px #51eaff12}
+.skill b{font:700 clamp(13px,1.5vw,20px) Orbitron;color:var(--cyan);text-shadow:0 0 12px #56f6ff}
+.skill small{position:absolute;bottom:3px;font-size:clamp(7px,.65vw,10px);letter-spacing:.08em;color:#9db2d4}
+.skill.ready{border-color:#56f6ff;box-shadow:0 0 14px #56f6ff30,inset 0 0 15px #56f6ff12}
+#toast{position:absolute;left:50%;top:25%;transform:translate(-50%,-50%);font:900 clamp(18px,3vw,44px) Orbitron,sans-serif;letter-spacing:.12em;color:white;text-align:center;text-shadow:0 0 20px #5af6ff,3px 3px #b02bff;opacity:0;transition:opacity .25s;white-space:nowrap}
+#toast small{display:block;font:600 clamp(9px,1vw,14px) Rajdhani,sans-serif;letter-spacing:.3em;color:#b9d9ff;margin-top:12px}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(110deg,#050711ed,#0a0d20d9 55%,#100820e8);z-index:5}
+.overlay.hidden{display:none}
+.card{width:min(78%,700px);padding:clamp(18px,4vw,48px);border:1px solid #3d6386;background:linear-gradient(135deg,#10172bea,#090c1bea);box-shadow:0 0 45px #4a46ff20,inset 0 0 45px #5cf6ff08;position:relative}
+.card:before,.card:after{content:"";position:absolute;width:35px;height:3px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.card:before{top:-2px;left:-1px}.card:after{bottom:-2px;right:-1px;background:var(--pink);box-shadow:0 0 12px var(--pink)}
+.kicker{font:700 clamp(8px,.85vw,12px) Orbitron,sans-serif;color:var(--cyan);letter-spacing:.32em}
+h1{font:900 clamp(27px,5.5vw,70px)/1 Orbitron,sans-serif;margin:15px 0 10px;letter-spacing:-.04em}
+h1 span{color:var(--cyan);text-shadow:0 0 25px #56f6ff88}
+.lead{max-width:540px;color:#b2c3de;font-size:clamp(12px,1.35vw,17px);line-height:1.5}
+.rowinfo{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}
+.tag{border:1px solid #344d70;padding:7px 10px;color:#a8c9ec;font:700 10px Orbitron;letter-spacing:.1em}
+button{font:700 12px Orbitron,sans-serif;letter-spacing:.14em;color:#07101c;background:var(--cyan);border:0;padding:14px 22px;cursor:pointer;box-shadow:0 0 22px #56f6ff44;transition:.15s}
+button:hover{transform:translateY(-2px);box-shadow:0 0 30px #56f6ff88}
+.secondary{background:transparent;border:1px solid #536d91;color:#c4d9f5;box-shadow:none;margin-left:8px}
+.controls{margin-top:22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;color:#8da5c9;font-size:12px}
+.controls div{padding:8px;border-top:1px solid #263956}
+.controls b{color:#e5f5ff}
+#endScore{color:#b6cae6;line-height:1.8}
+#pauseHint{position:absolute;right:2.3%;top:4%;font:700 9px Orbitron;color:#7890b0;letter-spacing:.12em}
+@media(max-width:600px){.controls{grid-template-columns:repeat(2,1fr)}#bossPanel{left:25%;right:25%}.card{width:90%}.secondary{margin:8px 0 0}}
+</style>
+</head>
+<body>
+<div id="shell">
+<canvas id="game" width="960" height="540" aria-label="VOID BREAK game"></canvas>
+<div id="hud">
+  <div class="brand">VOID<span>//</span>BREAK<div class="sub">NEON RIFT PROTOCOL</div></div>
+  <div id="stageName">SECTOR 01 <small>THE SHATTERED GRID</small></div>
+  <div id="pauseHint">P — PAUSE</div>
+  <div id="bossPanel"><div id="bossName">RIFT WARDEN</div><div class="bar"><div class="fill" id="bossFill"></div></div></div>
+  <div id="playerPanel">
+    <div class="label">VOID RUNNER <span id="hpText" style="float:right">100 / 100</span></div>
+    <div class="bar"><div class="fill" id="hpFill"></div></div>
+    <div class="label">AETHER CORE <span id="manaText" style="float:right">100%</span></div>
+    <div class="bar"><div class="fill" id="manaFill"></div></div>
+    <div id="stats">SCORE <span id="score">000000</span> &nbsp;·&nbsp; KILLS <span id="kills">00</span></div>
+  </div>
+  <div id="abilities">
+    <div class="skill ready"><b>✦</b><small>J · BOLT</small></div>
+    <div class="skill ready"><b>⌁</b><small>SPACE · BLINK</small></div>
+    <div class="skill ready"><b>Ω</b><small>K · ULT</small></div>
+  </div>
+  <div id="toast">SECTOR CLEARED<small>RIFT GATE OPENED</small></div>
+</div>
+<div class="overlay" id="start">
+ <div class="card">
+  <div class="kicker">/// CLASSIFIED EXPERIMENT · 2089</div>
+  <h1>VOID<span>//</span><br>BREAK</h1>
+  <div class="lead">Reality is collapsing. The Rift is awake. Harness the Aether, break through corrupted sectors, and silence whatever waits beyond the void.</div>
+  <div class="rowinfo"><div class="tag">✦ PIXEL NEON ACTION</div><div class="tag">3 SECTORS</div><div class="tag">BOSS PROTOCOL</div></div>
+  <button id="startBtn">INITIALIZE RUN ▶</button><button class="secondary" id="howBtn">HOW TO PLAY</button>
+  <div class="controls" id="controlInfo">
+    <div><b>WASD / ARROWS</b><br>Move</div><div><b>MOUSE / J</b><br>Cast Aether Bolt</div><div><b>SPACE</b><br>Phase Blink</div><div><b>K</b><br>Ultimate: Void Break</div><div><b>P / ESC</b><br>Pause</div><div><b>OBJECTIVE</b><br>Clear enemies → enter rift</div>
+  </div>
+ </div>
+</div>
+<div class="overlay hidden" id="end">
+ <div class="card">
+  <div class="kicker" id="endKicker">MISSION REPORT</div><h1 id="endTitle">RIFT <span>STABLE</span></h1>
+  <div class="lead" id="endScore"></div>
+  <div class="rowinfo"><div class="tag" id="endTag">RUN COMPLETE</div></div>
+  <button id="againBtn">REBOOT TIMELINE ↻</button>
+ </div>
+</div>
+<div class="overlay hidden" id="pause">
+ <div class="card"><div class="kicker">SYSTEM HALTED</div><h1>PAUSE<span>//</span></h1><div class="lead">The Rift can wait. Your next move decides everything.</div><button id="resumeBtn">RESUME RUN ▶</button><button class="secondary" id="quitBtn">RESTART</button></div>
+</div>
+</div>
+<script>
+(() => {
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+const W=960,H=540;
+const $=id=>document.getElementById(id);
+const keys=new Set(); let mouse={x:W/2,y:H/2,down:false};
+let state='menu',last=0,time=0,score=0,kills=0,stage=0,shake=0,flash=0,toastTimer=0;
+let player, enemies=[], shots=[], particles=[], pickups=[], obstacles=[], portal=null, boss=null, bgStars=[];
+const stageData=[
+ {name:'THE SHATTERED GRID',color:'#56f6ff',enemy:'GLITCH STALKER',count:7},
+ {name:'THE SUNKEN CIRCUIT',color:'#c18aff',enemy:'NULL WRAITH',count:10},
+ {name:'THE LAST FIREWALL',color:'#ff4eae',enemy:'RIFT WARDEN',count:0}
+];
+function rand(a,b){return a+Math.random()*(b-a)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function reset(){
+ state='playing';time=0;score=0;kills=0;stage=0;shake=0;flash=0;toastTimer=0;
+ player={x:W/2,y:H/2,r:12,hp:100,maxHp:100,mana:100,maxMana:100,speed:205,faceX:1,faceY:0,cd:0,dash:0,inv:0,ult:0,blinkX:1,blinkY:0};
+ enemies=[];shots=[];particles=[];pickups=[];obstacles=[];portal=null;boss=null;
+ bgStars=Array.from({length:100},()=>({x:rand(0,W),y:rand(0,H),s:rand(.5,2),a:rand(.15,.8)}));
+ buildStage();
+ $('start').classList.add('hidden');$('end').classList.add('hidden');$('pause').classList.add('hidden');
+}
+function buildStage(){
+ enemies=[];shots=[];pickups=[];portal=null;boss=null;obstacles=[];
+ // scattered glowing cover pillars, keeping spawn clear
+ for(let i=0;i<8;i++){
+   let x,y,tries=0; do{x=rand(90,W-90);y=rand(95,H-85);tries++}while(Math.hypot(x-player.x,y-player.y)<100&&tries<20);
+   obstacles.push({x,y,w:rand(24,42),h:rand(24,42),phase:rand(0,6)});
+ }
+ if(stage<2){
+   for(let i=0;i<stageData[stage].count;i++){
+     let x,y;do{x=rand(45,W-45);y=rand(75,H-45)}while(Math.hypot(x-player.x,y-player.y)<140);
+     enemies.push({x,y,r:stage===0?11:13,hp:stage===0?34:48,maxHp:stage===0?34:48,speed:stage===0?57:69,cd:rand(.3,1.5),type:stage===0?'stalker':'wraith',phase:rand(0,6),hit:0});
+   }
+ }else{
+   boss={x:W/2,y:155,r:31,hp:560,maxHp:560,phase:0,cd:1.2,hit:0,burst:0};
+ }
+ $('stageName').innerHTML=`SECTOR 0${stage+1}<small>${stageData[stage].name}</small>`;
+ $('bossPanel').style.display=boss?'block':'none';
+ $('bossName').textContent=stage===2?'RIFT WARDEN // PRIME':'';
+ updateHud();
+}
+function burst(x,y,color,n=12,power=120){
+ for(let i=0;i<n;i++){let a=rand(0,Math.PI*2),v=rand(power*.25,power);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.2,.65),max:.65,size:rand(2,5),color});}
+}
+function castBolt(){
+ if(state!=='playing'||player.cd>0||player.mana<8)return;
+ player.mana-=8;player.cd=.19;
+ let tx=mouse.x,ty=mouse.y;
+ if(!mouse.down){let nearest=null,nd=420;for(const e of enemies.concat(boss?[boss]:[])){if(!e)continue;let d=dist(player,e);if(d<nd){nd=d;nearest=e}}if(nearest){tx=nearest.x;ty=nearest.y}else{tx=player.x+player.faceX*300;ty=player.y+player.faceY*300}}
+ let dx=tx-player.x,dy=ty-player.y,l=Math.hypot(dx,dy)||1;
+ shots.push({x:player.x+dx/l*14,y:player.y+dy/l*14,vx:dx/l*510,vy:dy/l*510,r:5,life:1.15,damage:24,color:stageData[stage].color});
+ burst(player.x+dx/l*15,player.y+dy/l*15,'#b8ffff',4,55);
+}
+function ultimate(){
+ if(state!=='playing'||player.ult>0||player.mana<60)return;
+ player.mana-=60;player.ult=2.5;shake=14;flash=.22;
+ // radial nova, damaging every enemy in a huge radius
+ burst(player.x,player.y,'#ffffff',65,300);burst(player.x,player.y,'#ff3bcb',45,230);
+ for(const e of enemies){if(dist(player,e)<270){e.hp-=100;e.hit=.25;burst(e.x,e.y,'#56f6ff',14,160)}}
+ if(boss&&dist(player,boss)<360){boss.hp-=125;boss.hit=.35;burst(boss.x,boss.y,'#ff3bcb',35,240)}
+ for(let i=0;i<18;i++){let a=i*Math.PI/9;shots.push({x:player.x,y:player.y,vx:Math.cos(a)*390,vy:Math.sin(a)*390,r:7,life:.65,damage:22,color:'#ff4bd1',pierce:true})}
+}
+function blink(){
+ if(state!=='playing'||player.dash>0||player.mana<15)return;
+ player.mana-=15;player.dash=.18;player.inv=.38;
+ let dx=(keys.has('d')||keys.has('ArrowRight')?1:0)-(keys.has('a')||keys.has('ArrowLeft')?1:0);
+ let dy=(keys.has('s')||keys.has('ArrowDown')?1:0)-(keys.has('w')||keys.has('ArrowUp')?1:0);
+ if(!dx&&!dy){dx=player.faceX;dy=player.faceY}
+ let l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
+ player.x=clamp(player.x+dx*105,22,W-22);player.y=clamp(player.y+dy*105,55,H-22);
+ burst(player.x-dx*45,player.y-dy*45,'#56f6ff',18,120);shake=3;
+}
+function hurtPlayer(amount){
+ if(player.inv>0)return;
+ player.hp-=amount;player.inv=.65;shake=7;flash=.12;burst(player.x,player.y,'#ff477f',12,140);
+ if(player.hp<=0){player.hp=0;finish(false)}
+}
+function killEnemy(e){
+ score+=150;kills++;burst(e.x,e.y,e.type==='wraith'?'#bd75ff':'#56f6ff',20,180);
+ if(Math.random()<.32)pickups.push({x:e.x,y:e.y,r:7,type:'mana',pulse:0});
+}
+function update(dt){
+ if(state!=='playing')return;
+ time+=dt;player.cd=Math.max(0,player.cd-dt);player.dash=Math.max(0,player.dash-dt);player.inv=Math.max(0,player.inv-dt);player.ult=Math.max(0,player.ult-dt);
+ player.mana=Math.min(100,player.mana+dt*5.5);
+ let dx=(keys.has('d')||keys.has('ArrowRight')?1:0)-(keys.has('a')||keys.has('ArrowLeft')?1:0);
+ let dy=(keys.has('s')||keys.has('ArrowDown')?1:0)-(keys.has('w')||keys.has('ArrowUp')?1:0);
+ let l=Math.hypot(dx,dy)||1;
+ if(dx||dy){player.faceX=dx/l;player.faceY=dy/l;player.x+=dx/l*player.speed*dt;player.y+=dy/l*player.speed*dt}
+ player.x=clamp(player.x,20,W-20);player.y=clamp(player.y,48,H-20);
+ // collisions with pillars
+ for(const o of obstacles){if(player.x>o.x-o.w/2-10&&player.x<o.x+o.w/2+10&&player.y>o.y-o.h/2-10&&player.y<o.y+o.h/2+10){player.x-=dx*player.speed*dt;player.y-=dy*player.speed*dt}}
+ for(let i=enemies.length-1;i>=0;i--){
+  const e=enemies[i];e.phase+=dt*4;e.cd-=dt;e.hit=Math.max(0,e.hit-dt);
+  let ex=player.x-e.x,ey=player.y-e.y,ed=Math.hypot(ex,ey)||1;
+  if(ed>26){e.x+=ex/ed*e.speed*dt;e.y+=ey/ed*e.speed*dt}
+  if(ed<25&&e.cd<=0){hurtPlayer(9);e.cd=.8}
+  if(e.hp<=0){killEnemy(e);enemies.splice(i,1)}
+ }
+ if(boss){
+  boss.phase+=dt;boss.cd-=dt;boss.hit=Math.max(0,boss.hit-dt);
+  boss.x=W/2+Math.sin(boss.phase*.65)*220;boss.y=135+Math.sin(boss.phase*1.2)*35;
+  if(boss.cd<=0){
+   boss.cd=boss.hp<boss.maxHp*.35?.65:1.15;
+   let count=boss.hp<boss.maxHp*.35?9:5;
+   for(let i=0;i<count;i++){let a=Math.atan2(player.y-boss.y,player.x-boss.x)+(i-(count-1)/2)*.16;shots.push({x:boss.x,y:boss.y,vx:Math.cos(a)*155,vy:Math.sin(a)*155,r:7,life:4,damage:12,enemy:true,color:'#ff3b8b'})}
+   if(boss.hp<boss.maxHp*.35)burst(boss.x,boss.y,'#ff3b8b',8,100);
+  }
+  if(dist(player,boss)<boss.r+13)hurtPlayer(14*dt);
+  if(boss.hp<=0){score+=2500;burst(boss.x,boss.y,'#ff3bcb',90,300);boss=null;$('bossPanel').style.display='none';stageClear()}
+ }
+ for(let i=shots.length-1;i>=0;i--){
+  const s=shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
+  if(s.enemy){
+   if(dist(s,player)<s.r+player.r){hurtPlayer(s.damage);shots.splice(i,1);continue}
+  }else{
+   let hit=false;
+   for(const e of enemies){if(dist(s,e)<s.r+e.r){e.hp-=s.damage;e.hit=.12;burst(s.x,s.y,s.color,5,70);if(!s.pierce)hit=true;break}}
+   if(boss&&dist(s,boss)<s.r+boss.r){boss.hp-=s.damage;boss.hit=.12;burst(s.x,s.y,s.color,6,80);if(!s.pierce)hit=true}
+   if(hit){shots.splice(i,1);continue}
+  }
+  if(s.life<=0||s.x<-30||s.x>W+30||s.y<-30||s.y>H+30)shots.splice(i,1);
+ }
+ for(let i=pickups.length-1;i>=0;i--){let p=pickups[i];p.pulse+=dt;if(dist(p,player)<24){player.mana=Math.min(100,player.mana+22);player.hp=Math.min(100,player.hp+5);burst(p.x,p.y,'#56f6ff',8,90);pickups.splice(i,1)}}
+ for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.06,dt);p.vy*=Math.pow(.06,dt);p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+ shake=Math.max(0,shake-dt*22);flash=Math.max(0,flash-dt);
+ if(!enemies.length&&!boss&&!portal){portal={x:W/2,y:H/2,r:26,pulse:0};showToast('SECTOR CLEARED','RIFT GATE OPENED')}
+ if(portal){portal.pulse+=dt;if(dist(player,portal)<37){if(stage<2){stage++;player.hp=Math.min(100,player.hp+22);player.mana=100;buildStage();showToast('RIFT BREACHED',`ENTERING SECTOR 0${stage+1}`)}else finish(true)}}
+ updateHud();
+}
+function stageClear(){
+ portal={x:W/2,y:H/2,r:26,pulse:0};
+ showToast('SECTOR CLEARED','RIFT GATE OPENED');
+}
+function showToast(title,sub){$('toast').innerHTML=title+`<small>${sub}</small>`;$('toast').style.opacity=1;toastTimer=1.8}
+function updateHud(){
+ $('hpFill').style.width=(player.hp/player.maxHp*100)+'%';$('manaFill').style.width=(player.mana/player.maxMana*100)+'%';
+ $('hpText').textContent=`${Math.ceil(player.hp)} / 100`;$('manaText').textContent=Math.floor(player.mana)+'%';
+ $('score').textContent=String(score).padStart(6,'0');$('kills').textContent=String(kills).padStart(2,'0');
+ if(boss)$('bossFill').style.width=(Math.max(0,boss.hp/boss.maxHp)*100)+'%';
+ document.querySelectorAll('.skill')[0].classList.toggle('ready',player.cd<=0&&player.mana>=8);
+ document.querySelectorAll('.skill')[1].classList.toggle('ready',player.dash<=0&&player.mana>=15);
+ document.querySelectorAll('.skill')[2].classList.toggle('ready',player.ult<=0&&player.mana>=60);
+}
+function finish(win){
+ state=win?'won':'lost';$('end').classList.remove('hidden');
+ $('endKicker').textContent=win?'/// TIMELINE RESTORED':'/// SIGNAL LOST';
+ $('endTitle').innerHTML=win?'RIFT <span>SHATTERED</span>':'VOID <span>CONSUMED</span>';
+ $('endScore').innerHTML=`${win?'All three sectors have been purged. Reality is yours again.':'Your signal faded into the Rift. Reboot and try again.'}<br><br><b>FINAL SCORE:</b> ${score.toLocaleString()}<br><b>ENEMIES PURGED:</b> ${kills}<br><b>TIME:</b> ${Math.floor(time/60)}:${String(Math.floor(time%60)).padStart(2,'0')}`;
+ $('endTag').textContent=win?'PROTOCOL COMPLETE':'RUN TERMINATED';
+}
+function draw(){
+ ctx.save();
+ if(shake>0)ctx.translate(rand(-shake,shake),rand(-shake,shake));
+ // atmospheric background
+ let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#0c1230');g.addColorStop(.55,'#0b0b20');g.addColorStop(1,'#180a2a');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // grid
+ ctx.lineWidth=1;ctx.strokeStyle='#24436b44';
+ for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+ for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ // scanline / stars
+ for(const s of bgStars){ctx.globalAlpha=s.a*(.7+.3*Math.sin(time*2+s.x));ctx.fillStyle='#9cefff';ctx.fillRect(s.x,s.y,s.s,s.s)}
+ ctx.globalAlpha=1;
+ // outer walls
+ ctx.strokeStyle='#56f6ff55';ctx.lineWidth=3;ctx.strokeRect(12,12,W-24,H-24);
+ ctx.strokeStyle='#ff3bcb44';ctx.lineWidth=1;ctx.strokeRect(20,20,W-40,H-40);
+ // corner circuit motifs
+ ctx.strokeStyle='#56f6ff';ctx.globalAlpha=.65;ctx.lineWidth=2;
+ for(const [x,y,sx,sy] of [[22,22,1,1],[W-22,22,-1,1],[22,H-22,1,-1],[W-22,H-22,-1,-1]]){ctx.beginPath();ctx.moveTo(x,y+sy*35);ctx.lineTo(x,y);ctx.lineTo(x+sx*35,y);ctx.stroke()}
+ ctx.globalAlpha=1;
+ // floor glowing rift lines
+ for(let i=0;i<5;i++){let y=95+i*78+Math.sin(time+i)*5;ctx.strokeStyle=`rgba(85,130,255,${.035+i*.008})`;ctx.beginPath();ctx.moveTo(30,y);ctx.lineTo(W-30,y);ctx.stroke()}
+ // obstacles
+ for(const o of obstacles){let pulse=.5+.5*Math.sin(time*2+o.phase);ctx.fillStyle='#121a34';ctx.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);ctx.strokeStyle=`rgba(86,246,255,${.35+pulse*.4})`;ctx.lineWidth=2;ctx.strokeRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);ctx.fillStyle='#56f6ff';ctx.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,3);ctx.fillStyle='#7c55ff22';ctx.fillRect(o.x-o.w/2+4,o.y-o.h/2+4,o.w-8,o.h-8)}
+ // portal
+ if(portal){let r=portal.r+Math.sin(portal.pulse*4)*5;ctx.save();ctx.translate(portal.x,portal.y);ctx.rotate(time*.6);ctx.shadowBlur=25;ctx.shadowColor='#56f6ff';ctx.strokeStyle='#56f6ff';ctx.lineWidth=3;for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(0,0,r+j*7,r*.52+j*5,time*.2+j,0,Math.PI*2);ctx.stroke()}ctx.fillStyle='#56f6ff22';ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle='#c6ffff';ctx.font='bold 11px Orbitron';ctx.textAlign='center';ctx.fillText('RIFT GATE',portal.x,portal.y+48)}
+ // pickups
+ for(const p of pickups){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.pulse*2);ctx.shadowBlur=15;ctx.shadowColor='#56f6ff';ctx.strokeStyle='#56f6ff';ctx.lineWidth=2;ctx.strokeRect(-6,-6,12,12);ctx.fillStyle='#56f6ff55';ctx.fillRect(-4,-4,8,8);ctx.restore()}
+ // enemy shots
+ for(const s of shots){ctx.save();ctx.shadowBlur=14;ctx.shadowColor=s.color;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(s.x-s.vx*.012,s.y-s.vy*.012,s.r*.35,0,Math.PI*2);ctx.fill();ctx.restore()}
+ // enemies
+ for(const e of enemies){ctx.save();ctx.translate(e.x,e.y);let glow=e.type==='wraith'?'#bd75ff':'#ff4c92';ctx.shadowBlur=16;ctx.shadowColor=glow;ctx.fillStyle=e.hit>0?'#ffffff':glow;
+ ctx.beginPath();if(e.type==='wraith'){ctx.moveTo(0,-e.r-4);ctx.lineTo(e.r+4,0);ctx.lineTo(0,e.r+5);ctx.lineTo(-e.r-4,0)}else{ctx.rect(-e.r,-e.r,e.r*2,e.r*2)}ctx.fill();
+ ctx.shadowBlur=0;ctx.fillStyle='#100c26';ctx.fillRect(-e.r*.55,-2,e.r*.45,3);ctx.fillRect(e.r*.15,-2,e.r*.45,3);
+ ctx.fillStyle='#ffb4ed';ctx.fillRect(-e.r,-e.r-7,e.r*2,2);ctx.fillStyle='#ff477e';ctx.fillRect(-e.r,-e.r-7,e.r*2*Math.max(0,e.hp/e.maxHp),2);ctx.restore()}
+ // boss
+ if(boss){ctx.save();ctx.translate(boss.x,boss.y);ctx.rotate(Math.sin(boss.phase)*.08);ctx.shadowBlur=35;ctx.shadowColor='#ff3bcb';ctx.fillStyle=boss.hit>0?'#fff':'#3b1558';ctx.strokeStyle='#ff4fcf';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(0,-boss.r-15);ctx.lineTo(boss.r+18,-4);ctx.lineTo(boss.r+8,boss.r+18);ctx.lineTo(0,boss.r+28);ctx.lineTo(-boss.r-8,boss.r+18);ctx.lineTo(-boss.r-18,-4);ctx.closePath();ctx.fill();ctx.stroke();
+ ctx.shadowBlur=16;ctx.fillStyle='#ff3bcb';ctx.fillRect(-17,-7,10,5);ctx.fillRect(7,-7,10,5);ctx.fillStyle='#56f6ff';ctx.fillRect(-6,9,12,3);
+ for(let i=0;i<4;i++){ctx.strokeStyle=`rgba(255,70,200,${.5+.4*Math.sin(time*4+i)})`;ctx.beginPath();ctx.arc(0,0,boss.r+9+i*6,time*1.4+i,time*1.4+i+Math.PI*1.25);ctx.stroke()}ctx.restore()}
+ // player aura and sprite
+ if(player){ctx.save();ctx.translate(player.x,player.y);
+ if(player.ult>0){ctx.globalAlpha=.7;ctx.strokeStyle='#ff3bcb';ctx.lineWidth=4;ctx.shadowBlur=30;ctx.shadowColor='#ff3bcb';ctx.beginPath();ctx.arc(0,0,38+Math.sin(time*25)*7,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1}
+ ctx.shadowBlur=18;ctx.shadowColor='#56f6ff';ctx.fillStyle=player.inv>0&&Math.floor(time*22)%2?'#ffffff':'#56f6ff';
+ // pixel warrior silhouette
+ ctx.fillRect(-8,-13,16,22);ctx.fillRect(-11,-7,4,11);ctx.fillRect(7,-7,4,11);ctx.fillRect(-7,9,5,8);ctx.fillRect(2,9,5,8);
+ ctx.fillStyle='#15264d';ctx.fillRect(-5,-9,10,12);ctx.fillStyle='#f2ffff';ctx.fillRect(player.faceX>=0?1:-5,-8,4,3);
+ ctx.fillStyle='#ff3bcb';ctx.fillRect(-8,-14,16,3);
+ // floating rune
+ ctx.shadowColor='#56f6ff';ctx.strokeStyle='#b4ffff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(player.faceX*14,player.faceY*14);ctx.lineTo(player.faceX*22-player.faceY*4,player.faceY*22+player.faceX*4);ctx.stroke();
+ ctx.restore()}
+ // particles
+ for(const p of particles){ctx.globalAlpha=clamp(p.life/(p.max||.65),0,1);ctx.fillStyle=p.color;ctx.shadowBlur=8;ctx.shadowColor=p.color;ctx.fillRect(p.x,p.y,p.size,p.size)}
+ ctx.globalAlpha=1;ctx.shadowBlur=0;
+ // screen effects
+ if(flash>0){ctx.fillStyle=`rgba(190,250,255,${flash*1.8})`;ctx.fillRect(0,0,W,H)}
+ // subtle scanlines
+ ctx.fillStyle='#00000012';for(let y=0;y<H;y+=4)ctx.fillRect(0,y,W,1);
+ ctx.restore();
+ if(toastTimer>0){toastTimer-=1/60;if(toastTimer<.3)$('toast').style.opacity=Math.max(0,toastTimer/.3)}
+}
+function loop(ts){let dt=Math.min((ts-last)/1000||0,.033);last=ts;if(state==='playing')update(dt);draw();requestAnimationFrame(loop)}
+function togglePause(){if(state==='playing'){state='paused';$('pause').classList.remove('hidden')}else if(state==='paused'){state='playing';$('pause').classList.add('hidden')}}
+window.addEventListener('keydown',e=>{
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
+ const k=e.key.length===1?e.key.toLowerCase():e.key;keys.add(k);
+ if(k==='j')castBolt();if(k==='k')ultimate();if(k===' '){if(state==='playing')blink()}
+ if(k==='p'||k==='Escape'){if(state==='playing'||state==='paused')togglePause()}
+});
+window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
+canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=(e.clientX-r.left)/r.width*W;mouse.y=(e.clientY-r.top)/r.height*H});
+canvas.addEventListener('mousedown',e=>{mouse.down=true;if(state==='playing')castBolt()});
+window.addEventListener('mouseup',()=>mouse.down=false);
+$('startBtn').onclick=reset;$('againBtn').onclick=reset;$('resumeBtn').onclick=togglePause;$('quitBtn').onclick=()=>{ $('pause').classList.add('hidden');$('start').classList.remove('hidden');state='menu'};
+$('howBtn').onclick=()=>{const el=$('controlInfo');el.style.color='#d4ecff';el.style.textShadow='0 0 8px #56f6ff';setTimeout(()=>{el.style.color='';el.style.textShadow=''},1200)};
+player={x:W/2,y:H/2,r:12,hp:100,maxHp:100,mana:100,maxMana:100,speed:205,faceX:1,faceY:0,cd:0,dash:0,inv:0,ult:0};
+bgStars=Array.from({length:100},()=>({x:rand(0,W),y:rand(0,H),s:rand(.5,2),a:rand(.15,.8)}));
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
